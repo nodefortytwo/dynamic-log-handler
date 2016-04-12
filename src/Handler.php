@@ -3,10 +3,8 @@
 namespace Nodefortytwo\DynamicLogHandler;
 
 use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Exception\RequestException;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Logger;
-use Psr\Http\Message\ResponseInterface;
 
 class Handler extends AbstractProcessingHandler
 {
@@ -44,14 +42,8 @@ class Handler extends AbstractProcessingHandler
 
     protected function send(array $record)
     {
-        //fire and forget
-        $promise = $this->guzzle->requestAsync('POST', $this->endpoint, [
+        $this->guzzle->request('POST', $this->endpoint, [
             'body' => json_encode($record),
         ]);
-        $promise->then(
-            function (ResponseInterface $res) {},
-            function (RequestException $e) {}
-        );
-
     }
 }
