@@ -1,6 +1,6 @@
 {
-    "name": "nodefortytwo/xftp",
-    "description": "Modified FTP Adapter",
+    "name": "nodefortytwo/dynamic-log-handler",
+    "description": "Monolog adapter to post json to arbitrary url ",
     "require": {
         "monolog/monolog": "^1.18",
         "guzzlehttp/guzzle": "^6.2"
