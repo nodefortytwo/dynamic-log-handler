@@ -12,19 +12,21 @@ class Handler extends AbstractProcessingHandler
     protected $endpoint = '/api/event';
     public $guzzle;
 
-    public function __construct(string $uri, string $port = "80", string $proxy = null, $level = Logger::DEBUG, $bubble = true)
+    public function __construct(string $uri, int $port = "80", string $proxy = null, $level = Logger::DEBUG, $bubble = true)
     {
         $this->uri   = $uri;
         $this->port  = $port;
         $this->proxy = $proxy;
 
-        if (!$proxy) {
+        //use udp if we aren't targeting 80 or 443, and if we don't have a proxy
+        if (!$proxy && $port != "80" && $port != "443") {
             if (!($this->sock = socket_create(AF_INET, SOCK_DGRAM, 0))) {
                 $errorcode = socket_last_error();
                 $errormsg  = socket_strerror($errorcode);
             }
         }
 
+        //if we don't have a socket, use http
         if (!$this->sock) {
             $proto     = ($port == 443) ? 'https://' : 'http://';
             $this->uri = $proto . $this->uri;
