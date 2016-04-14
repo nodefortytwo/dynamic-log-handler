@@ -12,12 +12,25 @@ class Handler extends AbstractProcessingHandler
     protected $endpoint = '/api/event';
     public $guzzle;
 
-    public function __construct(string $uri, string $proxy = null, $level = Logger::DEBUG, $bubble = true)
+    public function __construct(string $uri, string $port = "80", string $proxy = null, $level = Logger::DEBUG, $bubble = true)
     {
         $this->uri   = $uri;
+        $this->port  = $port;
         $this->proxy = $proxy;
 
-        $this->guzzle = $this->initGuzzle($uri, $proxy);
+        if (!$proxy) {
+            if (!($this->sock = socket_create(AF_INET, SOCK_DGRAM, 0))) {
+                $errorcode = socket_last_error();
+                $errormsg  = socket_strerror($errorcode);
+            }
+        }
+
+        if (!$this->sock) {
+            $proto     = ($port == 443) ? 'https://' : 'http://';
+            $this->uri = $proto . $this->uri;
+
+            $this->guzzle = $this->initGuzzle($this->uri, $this->proxy);
+        }
 
         parent::__construct($level, $bubble);
     }
@@ -33,11 +46,21 @@ class Handler extends AbstractProcessingHandler
         $client = new GuzzleClient(['base_uri' => $uri]);
         return $client;
     }
-    //TODO: look at UDP or something...
+
     protected function send(array $record)
     {
-        $this->guzzle->request('POST', $this->endpoint, [
-            'body' => json_encode($record),
-        ]);
+        //if guzzle is setup it means we can't use UDP :(
+        if ($this->guzzle) {
+            $this->guzzle->request('POST', $this->endpoint, [
+                'body' => json_encode($record),
+            ]);
+        } else {
+            $msg = json_encode($record);
+            //Send the message to the server
+            if (!socket_sendto($this->sock, $msg, strlen($msg), 0, $this->uri, $this->port)) {
+                $errorcode = socket_last_error();
+                $errormsg  = socket_strerror($errorcode);
+            }
+        }
     }
 }

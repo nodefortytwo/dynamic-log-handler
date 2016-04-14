@@ -6,15 +6,30 @@ use Nodefortytwo\DynamicLogHandler\Handler as DynamicHandler;
 class TestHandler extends \PHPUnit_Framework_TestCase
 {
 
-    public function setup()
+    public function setupLoggers()
     {
-        $this->log = new Logger('test');
-        $this->log->pushHandler(new DynamicHandler('127.0.0.1'));
+        $udp = new Logger('test');
+        $udp->pushHandler(new DynamicHandler('127.0.0.1', '50000'));
+
+        $http = new Logger('test');
+        $http->pushHandler(new DynamicHandler('127.0.0.1', '80', 'someproxy'));
+
+        $https = new Logger('test');
+        $https->pushHandler(new DynamicHandler('127.0.0.1', '443', 'someproxy'));
+
+        return [
+            [$udp],
+            [$http],
+            [$https],
+        ];
     }
 
-    public function testInfo()
+    /**
+     * @dataProvider setupLoggers
+     */
+    public function testInfo($logger)
     {
-        $this->log->addInfo('info');
+        //im not sure what to actually test
     }
 
 }
