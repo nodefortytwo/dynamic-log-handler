@@ -24,14 +24,8 @@ class Handler extends AbstractProcessingHandler
 
     protected function write(array $record)
     {
-        $record['context']['hostname'] = gethostname();
-
-        if (isset($_ENV['APP_ENV'])) {
-            $record['context']['environment'] = $_ENV['APP_ENV'];
-        }
-
+        unset($record['formatted']);
         $this->send($record);
-
     }
 
     protected function initGuzzle($uri, $proxy): GuzzleClient
@@ -39,7 +33,7 @@ class Handler extends AbstractProcessingHandler
         $client = new GuzzleClient(['base_uri' => $uri]);
         return $client;
     }
-
+    //TODO: look at UDP or something...
     protected function send(array $record)
     {
         $this->guzzle->request('POST', $this->endpoint, [
