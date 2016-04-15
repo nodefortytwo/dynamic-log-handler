@@ -12,7 +12,7 @@ class Handler extends AbstractProcessingHandler
     protected $endpoint = '/api/event';
     public $guzzle;
 
-    public function __construct(string $uri, int $port = "80", string $proxy = null, $level = Logger::DEBUG, $bubble = true)
+    public function __construct(string $uri, string $port = "80", string $proxy = null, $level = Logger::DEBUG, $bubble = true)
     {
         $this->uri   = $uri;
         $this->port  = $port;
