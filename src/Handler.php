@@ -46,6 +46,15 @@ class Handler extends AbstractProcessingHandler
 
     protected function initGuzzle($uri, $proxy): GuzzleClient
     {
+        $options = ['base_uri' => $uri];
+
+        if ($proxy) {
+            $options['proxy'] = [
+                'http'  => $proxy, // Use this proxy with "http"
+                'https' => $proxy, // Use this proxy with "https"
+            ];
+        }
+
         $client = new GuzzleClient(['base_uri' => $uri]);
         return $client;
     }

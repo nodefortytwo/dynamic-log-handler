@@ -21,7 +21,6 @@ class EnvironmentProcessor
 
     public function __invoke(array $record)
     {
-
         //we are just going to pick a few things out of the .env
         $env = [];
         foreach ($this->keys as $key) {
