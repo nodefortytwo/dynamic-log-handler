@@ -44,7 +44,7 @@ class Handler extends AbstractProcessingHandler
         $this->send($record);
     }
 
-    protected function initGuzzle($uri, $proxy): GuzzleClient
+    protected function initGuzzle($uri, $proxy = null): GuzzleClient
     {
         $options = ['base_uri' => $uri];
 
@@ -55,7 +55,7 @@ class Handler extends AbstractProcessingHandler
             ];
         }
 
-        $client = new GuzzleClient(['base_uri' => $uri]);
+        $client = new GuzzleClient($options);
         return $client;
     }
 
