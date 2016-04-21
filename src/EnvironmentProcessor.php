@@ -7,6 +7,7 @@ class EnvironmentProcessor
         'APP_URL',
         'APP_ENV',
         'APP_NAME',
+        'APP_VERSION',
         'DB_HOST',
         'DB_NAME',
         'PROXY_ADDRESS',
