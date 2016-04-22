@@ -12,7 +12,7 @@ class Handler extends AbstractProcessingHandler
     public $guzzle;
     public $sock;
 
-    public function __construct(string $uri, string $proxy = null, $level = Logger::DEBUG, $bubble = true)
+    public function __construct(string $uri, $proxy = null, $level = Logger::DEBUG, $bubble = true)
     {
 
         $this->uri_parts = static::parseUrl($uri);
