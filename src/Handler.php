@@ -42,7 +42,7 @@ class Handler extends AbstractProcessingHandler
         $headers = static::getHeaders($this->uri_parts['host'], $this->endpoint, $content);
         $request = $headers . "\r\n" . $content;
 
-        $host = $this->proxy_parts['host'];
+        $host = $this->proxy_parts['scheme'] . '://' . $this->proxy_parts['host'];
         $port = $this->proxy_parts['port'];
 
         $socket = @fsockopen($host, $port, $errno, $errstr, 5);
