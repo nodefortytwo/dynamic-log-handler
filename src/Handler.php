@@ -2,7 +2,6 @@
 
 namespace Nodefortytwo\DynamicLogHandler;
 
-use GuzzleHttp\Client as GuzzleClient;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Logger;
 
@@ -13,26 +12,19 @@ class Handler extends AbstractProcessingHandler
     public $guzzle;
     public $sock;
 
-    public function __construct(string $uri, string $port = "80", string $proxy = null, $level = Logger::DEBUG, $bubble = true)
+    public function __construct(string $uri, string $proxy = null, $level = Logger::DEBUG, $bubble = true)
     {
-        $this->uri   = $uri;
-        $this->port  = $port;
-        $this->proxy = $proxy;
 
-        //use udp if we aren't targeting 80 or 443, and if we don't have a proxy
-        if (!$proxy && $port != "80" && $port != "443") {
-            if (!($this->sock = socket_create(AF_INET, SOCK_DGRAM, 0))) {
-                $errorcode = socket_last_error();
-                $errormsg  = socket_strerror($errorcode);
-            }
-        }
+        $this->uri_parts = static::parseUrl($uri);
 
-        //if we don't have a socket, use http
-        if (!$this->sock) {
-            $proto     = ($port == 443) ? 'https://' : 'http://';
-            $this->uri = $proto . $this->uri;
-
-            $this->guzzle = $this->initGuzzle($this->uri, $this->proxy);
+        //i have no idea if this will work but i'm going
+        //to send the request to the "$proxy" with headers
+        //matching the uri, hopefully that will allow squid to
+        //forward it...
+        if (!$proxy) {
+            $this->proxy_parts = $this->uri_parts;
+        } else {
+            $this->proxy_parts = static::parseUrl($proxy);
         }
 
         parent::__construct($level, $bubble);
@@ -44,35 +36,65 @@ class Handler extends AbstractProcessingHandler
         $this->send($record);
     }
 
-    protected function initGuzzle($uri, $proxy = null): GuzzleClient
-    {
-        $options = ['base_uri' => $uri];
-
-        if ($proxy) {
-            $options['proxy'] = [
-                'http'  => $proxy, // Use this proxy with "http"
-                'https' => $proxy, // Use this proxy with "https"
-            ];
-        }
-
-        $client = new GuzzleClient($options);
-        return $client;
-    }
-
     protected function send(array $record)
     {
-        //if guzzle is setup it means we can't use UDP :(
-        if ($this->guzzle) {
-            $this->guzzle->request('POST', $this->endpoint, [
-                'body' => json_encode($record),
-            ]);
-        } else {
-            $msg = json_encode($record);
-            //Send the message to the server
-            if (!socket_sendto($this->sock, $msg, strlen($msg), 0, $this->uri, $this->port)) {
-                $errorcode = socket_last_error();
-                $errormsg  = socket_strerror($errorcode);
+        $content = json_encode($record);
+        $headers = static::getHeaders($this->uri_parts['host'], $this->endpoint, $content);
+        $request = $headers . "\r\n" . $content;
+
+        $host = $this->proxy_parts['host'];
+        $port = $this->proxy_parts['port'];
+
+        $socket = @fsockopen($host, $port, $errno, $errstr, 5);
+        if (!$socket) {
+            return;
+        }
+
+        fwrite($socket, $request);
+        fclose($socket);
+    }
+
+    protected static function getHeaders($host, $path, $content)
+    {
+        $headers = "POST " . $path . " HTTP/1.1\r\n";
+        $headers .= "Host: " . $host . "\r\n";
+        $headers .= "Content-Type: application/x-www-form-urlencoded\r\n";
+        $headers .= "Content-Length: " . strlen($content) . "\r\n";
+        $headers .= "Connection: Close\r\n";
+        return $headers;
+    }
+
+    protected static function parseUrl(string $url): array
+    {
+        $url = parse_url($url);
+
+        if (!isset($url['scheme'])) {
+            if (isset($url['port'])) {
+                switch ($url['port']) {
+                    case 443:
+                        $url['scheme'] = 'ssl';
+                        break;
+                    case 80:
+                    default:
+                        $url['scheme'] = 'http';
+                }
+            } else {
+                $url['scheme'] = 'http';
+                $url['port']   = 80;
             }
         }
+
+        if (!isset($url['port'])) {
+            switch ($url['scheme']) {
+                case 'ssl':
+                case 'https':
+                    $url['port'] = 443;
+                    break;
+                default:
+                    $url['port'] = 80;
+            }
+        }
+
+        return $url;
     }
 }
