@@ -38,6 +38,7 @@ class Handler extends AbstractProcessingHandler
 
     protected function send(array $record)
     {
+
         $content = json_encode($record);
         $headers = static::getHeaders($this->uri_parts['host'], $this->endpoint, $content);
         $request = $headers . "\r\n" . $content;
@@ -49,7 +50,6 @@ class Handler extends AbstractProcessingHandler
         if (!$socket) {
             return;
         }
-
         fwrite($socket, $request);
         fclose($socket);
     }
@@ -93,6 +93,15 @@ class Handler extends AbstractProcessingHandler
                 default:
                     $url['port'] = 80;
             }
+        }
+
+        switch ($url['scheme']) {
+            case 'https':
+            case 'ssl':
+                $url['scheme'] = 'ssl';
+                break;
+            default:
+                $url['scheme'] = 'tcp';
         }
 
         return $url;
